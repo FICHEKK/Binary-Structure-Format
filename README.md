@@ -31,12 +31,12 @@ public abstract BsfType Type { get; }
 
 2. Every concrete node must be able to write its data to the underlying stream.
 ```cs
-public abstract void WriteValue(BinaryWriter writer);
+public abstract void WriteValue(ExtendedBinaryWriter writer);
 ```
 
 3. Every concrete node must be able to read its data from the underlying stream.
 ```cs
-public abstract void ReadValue(BinaryReader reader);
+public abstract void ReadValue(ExtendedBinaryReader reader);
 ```
 
 For concrete implementations, take a look at the source code provided in this repository.
@@ -46,7 +46,7 @@ ___
 ### Primitive (leaf) nodes
 Primitive nodes are nodes that store simple primitive values. Each node is just a wrapper encapsulating a single primitive value.
 
-Note: Even though `BsfString` is not considered a primitive type by the C# standard, it is still included here as it is that frequent and important.
+**Note**: Even though `BsfString` is not considered a primitive type by the C# standard, it is still included here as it is that frequent and important.
 
 | Node | Value | C# type |
 | :--: | :---: | :-----: |
@@ -81,7 +81,7 @@ string str = stringNode.Value; // str = ""
 ___
 
 ### Array nodes
-Array nodes are nodes that store a reference to an array of primitive values. Every primitive node has its corresponding array node.
+Array nodes are nodes that store a reference to an array of primitive values. Every primitive node has its corresponding array node. Every array node derives from abstract generic `BsfArray<T>` base class (which itself derives from `BsfNode`).
 
 | Node | Value | C# type |
 | :--: | :---: | :-----: |
@@ -89,8 +89,8 @@ Array nodes are nodes that store a reference to an array of primitive values. Ev
 | `BsfShortArray` | Array of signed 16-bit integers. | `short[]` |
 | `BsfIntArray` | Array of signed 32-bit integers. | `int[]` |
 | `BsfLongArray` | Array of signed 64-bit integers. | `long[]` |
-| `BsfFloatArray` | Array of single precision 32-bit floating point values. | `float[]` |
-| `BsfDoubleArray` | Array of double precision 64-bit floating point values. | `double[]` |
+| `BsfFloatArray` | Array of single-precision 32-bit floating point numbers. | `float[]` |
+| `BsfDoubleArray` | Array of double-precision 64-bit floating point numbers. | `double[]` |
 | `BsfBoolArray` | Array of boolean values. | `bool[]` |
 | `BsfCharArray` | Array of Unicode UTF-16 characters. | `char[]` |
 | `BsfStringArray` | Array of strings. | `string[]` |
@@ -183,10 +183,71 @@ intArrayNode.Array = null; // ArgumentNullException
 
 ___
 
-### `BsfList` vs `BsfArray`
-Note: `BsfArray` means any of the [array nodes](#array-nodes) (`BsfByteArray`, `BsfIntArray` and so on...).
+### How are nodes written to a binary file?
+Before we take a look at an example, we should mention what is actually stored inside a single `.bfs` file. The answer is surprisingly simple: a single `.bfs` file contains a single serialized `BsfStruct`. This is the reason why this format is named *Binary structure* format; it holds a single complex structure, encoded in binary.
 
-If you need to store multiple values (for example bytes of an image), do **NOT** use `BsfList`, but rather a `BsfByteArray`. `BsfList` is a fairly expensive structure as each element of the `BsfList` is a `BsfNode` instance (1 element = 1 object in memory, unless element is a `null` reference), compared to `BsfArray` where each element is a simple primitive value. Additionally, `BsfList` also has to keep track of storing `null` values, which will increase the memory footprint even more when storing data in the persistent memory.
+Lets take a look at this simple structure:
+
+```cs
+var structure = new BsfStruct
+{
+	["Byte"] = new BsfByte(0xFF),
+	["N"] = null,
+	["A"] = new BsfShortArray(new short[] {1, 2}),
+	["L"] = new BsfList
+	{
+		new BsfBool(false),
+		null
+	}
+};
+```
+Serializing this particular structure, we get the following result:
+
+`04 | 03 04 42 79 74 65 FF | 00 01 4E | 0D 01 41 02 01 00 02 00 | 02 01 4C 02 09 00 00`
+
+**Note**: Data of each child node has been separated by the `|` symbol for easier understanding of the format.
+
+Meaning of each byte is as follows:
+
+1. `04` = number of child nodes stored in the `structure`, encoded using *LEB128* encoding
+___
+2. `03` = type of the first child node, in this case it is `BsfType.Byte`
+3. `04` = length of the `string` identifier of the `BsfByte` node, encoded using *LEB128* encoding
+4. `42` = `B` character
+5. `79` = `y` character
+6. `74` = `t` character
+7. `65` = `e` character
+8. `FF` = value of the `BsfByte` node
+___
+9. `00` = type of the second child node, in this case it is `BsfType.Null`
+10. `01` = length of the `string` identifier of the `null` value (`null` values do not have their own node class, as it is not needed)
+11. `4E` = `N` character
+___
+12. `0D` = type of the third child node, in this case it is `BsfType.ShortArray`
+13. `01` = length of the `string` identifier of the `BsfShortArray` node, encoded using *LEB128* encoding
+14. `41` = `A` character
+15. `02` = number of elements stored in the `short[]`, encoded using *LEB128* encoding
+16. `01` = first byte of the first `short` element in the array
+17. `00` = second byte of the first `short` element in the array
+18. `02` = first byte of the second `short` element in the array
+19. `00` = second byte of the second `short` element in the array
+___
+20. `02` = type of the third child node, in this case it is `BsfType.List`
+21. `01` = length of the `string` identifier of the `BsfList` node, encoded using *LEB128* encoding
+22. `4C` = `L` character
+23. `02` = number of nodes stored in the list, encoded using *LEB128* encoding
+24. `09` = type of the first node in the list, in this case it is `BsfType.Bool`
+25. `00` = value of the `BsfBool` node, in this case it is `false`
+26. `00` = type of the second node in the list, in this case it is `BsfType.Null`
+
+As you might have noticed, every information about the variable length (concretely: `BsfString` length, `BsfArray<T>` length, `BsfStruct` length and `BsfList` length) is encoded using *LEB128* encoding, which saves significant amounts of data, especially when storing many strings, arrays, structs or lists with small number of elements (which is very frequently the case).
+
+___
+
+### `BsfList` vs `BsfArray`
+**Note**: `BsfArray` means any of the [array nodes](#array-nodes) (`BsfByteArray`, `BsfIntArray` and so on...).
+
+If you need to store multiple values (for example bytes of an image), do **NOT** use `BsfList`, but rather a `BsfByteArray`. `BsfList` is a fairly expensive structure as each element of the `BsfList` is a `BsfNode` instance (1 element = 1 object on heap, unless element is a `null` reference), compared to `BsfArray` where all elements are simple primitive values stored in contiguous memory locations. Additionally, `BsfList` also has to keep track of storing `null` values, which will increase the memory footprint when storing data in the persistent memory.
 
 So, when should you use `BsfList`?
 1. If your element values can be `null`.
