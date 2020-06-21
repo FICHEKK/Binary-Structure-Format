@@ -120,3 +120,27 @@ list.Add(null);
 // Adding an element of wrong type will cause an exception:
 list.Add(new BsfString("Exception will be thrown on this line."));
 ```
+
+### Null values
+Binary structure format supports `null` values **exclusively** in `BsfStruct` and `BsfList`. A primitive or an array node is not allowed to hold a `null` reference. Trying to assign a `null` reference to the `BsfString` or any of the array nodes will cause an `ArgumentNullException` to be thrown. `BsfStringArray` elements also must be non-null `string` references, otherwise an `ArgumentNullException` will be thrown during the writing of the binary file.
+
+```cs
+var stringNode = new BsfString();
+stringNode.Value = null; // ArgumentNullException
+
+var byteArrayNode = new ByteArrayNode(null); // ArgumentNullException
+
+var intArrayNode = new IntArrayNode();
+intArrayNode.Array = null; // ArgumentNullException
+```
+
+### `BsfList` vs `BsfArray`
+Note: `BsfArray` means any of the [array nodes](#array-nodes) (`BsfByteArray`, `BsfIntArray` and so on...).
+
+If you need to store multiple values (for example bytes of an image), do **NOT** use `BsfList`, but rather a `BsfByteArray`. `BsfList` is a fairly expensive structure as each element of the `BsfList` is a `BsfNode` instance (1 element = 1 object in memory, unless element is a `null` reference), compared to `BsfArray` where each element is a simple primitive value. Additionally, `BsfList` also has to keep track of storing `null` values, which will increase the memory footprint even more when storing data in the persistent memory.
+
+So, when should you use `BsfList`?
+1. If your element values can be null.
+2. If you need to store a list of complex structures (use `BsfStruct` for defining those).
+
+If possible, always prefer storing multiple values in a `BsfArray`.
