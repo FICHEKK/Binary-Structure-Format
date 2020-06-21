@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using BinaryStructureFormat.Nodes.Arrays;
 using BinaryStructureFormat.Nodes.Primitives;
 
@@ -9,9 +8,9 @@ namespace BinaryStructureFormat.Nodes
     {
         public abstract BsfType Type { get; }
 
-        public void WriteType(BinaryWriter writer) => writer.Write((byte) Type);
-        public abstract void WriteValue(BinaryWriter writer);
-        public abstract void ReadValue(BinaryReader reader);
+        public void WriteType(ExtendedBinaryWriter writer) => writer.Write((byte) Type);
+        public abstract void WriteValue(ExtendedBinaryWriter writer);
+        public abstract void ReadValue(ExtendedBinaryReader reader);
 
         protected static BsfNode Create(BsfType type)
         {

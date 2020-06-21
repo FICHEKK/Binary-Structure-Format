@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 
 namespace BinaryStructureFormat.Nodes
 {
@@ -14,9 +13,9 @@ namespace BinaryStructureFormat.Nodes
         
         private readonly List<BsfNode> _list = new List<BsfNode>();
 
-        public override void WriteValue(BinaryWriter writer)
+        public override void WriteValue(ExtendedBinaryWriter writer)
         {
-            writer.Write(_list.Count);
+            writer.Write7BitEncodedInt(_list.Count);
 
             foreach (var node in _list)
             {
@@ -32,9 +31,9 @@ namespace BinaryStructureFormat.Nodes
             }
         }
 
-        public override void ReadValue(BinaryReader reader)
+        public override void ReadValue(ExtendedBinaryReader reader)
         {
-            var count = reader.ReadInt32();
+            var count = reader.Read7BitEncodedInt();
 
             for (var i = 0; i < count; i++)
             {

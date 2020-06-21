@@ -1,37 +1,13 @@
-﻿using System;
-using System.IO;
-
-namespace BinaryStructureFormat.Nodes.Arrays
+﻿namespace BinaryStructureFormat.Nodes.Arrays
 {
-    public sealed class BsfStringArray : BsfNode
+    public sealed class BsfStringArray : BsfArray<string>
     {
-        private static readonly string[] EmptyArray = new string[0];
         public override BsfType Type => BsfType.StringArray;
-
-        private string[] _array;
-        public string[] Array
-        {
-            get => _array;
-            set => _array = value ?? throw new ArgumentNullException();
-        }
 
         public BsfStringArray() => Array = EmptyArray;
         public BsfStringArray(string[] array) => Array = array;
 
-        public override void WriteValue(BinaryWriter writer)
-        {
-            writer.Write(Array.Length);
-            foreach (var value in Array)
-                writer.Write(value);
-        }
-
-        public override void ReadValue(BinaryReader reader)
-        {
-            var count = reader.ReadInt32();
-            Array = new string[count];
-
-            for (var i = 0; i < count; i++)
-                Array[i] = reader.ReadString();
-        }
+        protected override void WriteSingleValue(ExtendedBinaryWriter writer, string value) => writer.Write(value);
+        protected override string ReadSingleValue(ExtendedBinaryReader reader) => reader.ReadString();
     }
 }

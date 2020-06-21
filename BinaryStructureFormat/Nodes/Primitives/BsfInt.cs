@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace BinaryStructureFormat.Nodes.Primitives
+﻿namespace BinaryStructureFormat.Nodes.Primitives
 {
     public sealed class BsfInt : BsfNode
     {
@@ -10,7 +8,7 @@ namespace BinaryStructureFormat.Nodes.Primitives
         public BsfInt() {}
         public BsfInt(int value) => Value = value;
 
-        public override void WriteValue(BinaryWriter writer) => writer.Write(Value);
-        public override void ReadValue(BinaryReader reader) => Value = reader.ReadInt32();
+        public override void WriteValue(ExtendedBinaryWriter writer) => writer.Write(Value);
+        public override void ReadValue(ExtendedBinaryReader reader) => Value = reader.ReadInt32();
     }
 }

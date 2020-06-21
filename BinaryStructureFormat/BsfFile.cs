@@ -17,7 +17,7 @@ namespace BinaryStructureFormat
 
         public void Save(string path)
         {
-            using (var writer = new BinaryWriter(new FileStream(path, FileMode.Create)))
+            using (var writer = new ExtendedBinaryWriter(new FileStream(path, FileMode.Create)))
             {
                 Root.WriteValue(writer);
             }
@@ -25,7 +25,7 @@ namespace BinaryStructureFormat
         
         public void Load(string path)
         {
-            using (var reader = new BinaryReader(File.OpenRead(path)))
+            using (var reader = new ExtendedBinaryReader(File.OpenRead(path)))
             {
                 Root = new BsfStruct();
                 Root.ReadValue(reader);

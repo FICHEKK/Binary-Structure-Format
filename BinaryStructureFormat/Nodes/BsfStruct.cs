@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 
 namespace BinaryStructureFormat.Nodes
 {
@@ -11,9 +10,9 @@ namespace BinaryStructureFormat.Nodes
 
         private readonly Dictionary<string, BsfNode> _dictionary = new Dictionary<string, BsfNode>();
 
-        public override void WriteValue(BinaryWriter writer)
+        public override void WriteValue(ExtendedBinaryWriter writer)
         {
-            writer.Write(_dictionary.Count);
+            writer.Write7BitEncodedInt(_dictionary.Count);
             
             foreach (var (identifier, node) in _dictionary)
             {
@@ -31,11 +30,11 @@ namespace BinaryStructureFormat.Nodes
             }
         }
 
-        public override void ReadValue(BinaryReader reader)
+        public override void ReadValue(ExtendedBinaryReader reader)
         {
-            var childrenCount = reader.ReadInt32();
+            var count = reader.Read7BitEncodedInt();
 
-            for (var i = 0; i < childrenCount; i++)
+            for (var i = 0; i < count; i++)
             {
                 var type = (BsfType) reader.ReadByte();
                 var identifier = reader.ReadString();
@@ -57,10 +56,25 @@ namespace BinaryStructureFormat.Nodes
         //                               Struct read & write
         // ===================================================================================
         
-        public void Add(string identifier, BsfNode node) => _dictionary.Add(identifier, node);
-        public T Get<T>(string identifier) where T : BsfNode => _dictionary.TryGetValue(identifier, out var node) ? (T) node : null;
-        public bool Remove(string identifier) => _dictionary.Remove(identifier);
-        public void Clear() => _dictionary.Clear();
+        public void Add(string identifier, BsfNode node)
+        {
+            _dictionary.Add(identifier, node);
+        }
+
+        public T Get<T>(string identifier) where T : BsfNode
+        {
+            return _dictionary.TryGetValue(identifier, out var node) ? (T) node : null;
+        }
+
+        public bool Remove(string identifier)
+        {
+            return _dictionary.Remove(identifier);
+        }
+
+        public void Clear()
+        {
+            _dictionary.Clear();
+        }
 
         public BsfNode this[string identifier]
         {
@@ -72,7 +86,10 @@ namespace BinaryStructureFormat.Nodes
         //                                Struct utility
         // ===================================================================================
         
-        public bool ContainsKey(string identifier) => _dictionary.ContainsKey(identifier);
+        public bool ContainsKey(string identifier)
+        {
+            return _dictionary.ContainsKey(identifier);
+        }
 
         // ===================================================================================
         //                                Struct iteration

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 
 namespace BinaryStructureFormat.Nodes.Primitives
 {
@@ -17,7 +16,7 @@ namespace BinaryStructureFormat.Nodes.Primitives
         public BsfString() => Value = string.Empty;
         public BsfString(string value) => Value = value;
 
-        public override void WriteValue(BinaryWriter writer) => writer.Write(Value);
-        public override void ReadValue(BinaryReader reader) => Value = reader.ReadString();
+        public override void WriteValue(ExtendedBinaryWriter writer) => writer.Write(Value);
+        public override void ReadValue(ExtendedBinaryReader reader) => Value = reader.ReadString();
     }
 }
