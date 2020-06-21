@@ -6,6 +6,16 @@ Today, there exist many popular formats that are capable of storing tree-like hi
 
 However, that readability comes with a great cost of speed and memory. If speed and memory are critical, heavy use of those formats should be avoided. Binary structure format sacrifices readability in order to achieve high efficiency in both speed and memory.
 
+### The format
+Binary structure format stores its data hierarchy in a series of nodes. Each node type has its unique identifier which is simply a unique `byte` value that identifies each node type. There are three main types of nodes:
+
+1. Primitive nodes that hold simple primitive values such as `int` or a `double` value.
+2. Array nodes that hold an array of primitive values such as `int[]` or a `double[]` array.
+3. Collection nodes that hold multiple nodes (and can also hold `null` values).
+	* `BsfStruct` that maps the `string` identifier to a specific node.
+	* `BsfList` that models a sequential collection of nodes of a specific type.
+
+
 ### Primitive (leaf) nodes
 Primitive nodes are nodes that store simple primitive values. Each node is just a wrapper encapsulating a single primitive value.
 
@@ -121,7 +131,7 @@ list.Add(null);
 list.Add(new BsfString("Exception will be thrown on this line."));
 ```
 
-### Null values
+### `null` values
 Binary structure format supports `null` values **exclusively** in `BsfStruct` and `BsfList`. A primitive or an array node is not allowed to hold a `null` reference. Trying to assign a `null` reference to the `BsfString` or any of the array nodes will cause an `ArgumentNullException` to be thrown. `BsfStringArray` elements also must be non-null `string` references, otherwise an `ArgumentNullException` will be thrown during the writing of the binary file.
 
 ```cs
@@ -140,7 +150,24 @@ Note: `BsfArray` means any of the [array nodes](#array-nodes) (`BsfByteArray`, `
 If you need to store multiple values (for example bytes of an image), do **NOT** use `BsfList`, but rather a `BsfByteArray`. `BsfList` is a fairly expensive structure as each element of the `BsfList` is a `BsfNode` instance (1 element = 1 object in memory, unless element is a `null` reference), compared to `BsfArray` where each element is a simple primitive value. Additionally, `BsfList` also has to keep track of storing `null` values, which will increase the memory footprint even more when storing data in the persistent memory.
 
 So, when should you use `BsfList`?
-1. If your element values can be null.
+1. If your element values can be `null`.
 2. If you need to store a list of complex structures (use `BsfStruct` for defining those).
 
 If possible, always prefer storing multiple values in a `BsfArray`.
+
+### Writing/saving data to a binary `.bsf` file (serialization)
+Serializing data hierarchy is made extremely easy using the `BsfFile` component:
+
+```cs
+var structure = new BsfStruct { ... };
+
+var bsfFile = new BsfFile(structure);
+bsfFile.Save("file.bsf");
+```
+
+### Reading/loading data from a binary `.bsf` file (deserialization)
+Deserializing is even simpler:
+
+```cs
+BsfStruct structure = new BsfFile("file.bsf").Root;
+```
