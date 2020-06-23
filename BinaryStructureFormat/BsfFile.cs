@@ -7,14 +7,33 @@ using BinaryStructureFormat.Nodes.Primitives;
 
 namespace BinaryStructureFormat
 {
+    /// <summary>
+    /// Models a single binary-structure-format file and offers a simple interface
+    /// for saving, loading and converting its contents to a readable string format.
+    /// </summary>
     public class BsfFile
     {
+        /// <summary>
+        /// Root of the structure held by this instance.
+        /// </summary>
         public BsfStruct Root { get; private set; }
-        public string IndentPattern { get; set; } = "\t";
 
+        /// <summary>
+        /// Constructs a new binary-structure-format file with the given structure.
+        /// </summary>
+        /// <param name="root">Root of the structure. Cannot be null.</param>
         public BsfFile(BsfStruct root) => Root = root ?? throw new ArgumentNullException(nameof(root));
+        
+        /// <summary>
+        /// Constructs a new binary-structure-format file and loads its structure from the specified file.
+        /// </summary>
+        /// <param name="sourcePath">Path of the source file.</param>
         public BsfFile(string sourcePath) => Load(sourcePath);
 
+        /// <summary>
+        /// Saves the structure held by this instance to the specified file.
+        /// </summary>
+        /// <param name="path">Path of the destination file.</param>
         public void Save(string path)
         {
             using (var writer = new ExtendedBinaryWriter(new FileStream(path, FileMode.Create)))
@@ -23,6 +42,10 @@ namespace BinaryStructureFormat
             }
         }
         
+        /// <summary>
+        /// Loads the structure from the specified file.
+        /// </summary>
+        /// <param name="path">Path of the source file.</param>
         public void Load(string path)
         {
             using (var reader = new ExtendedBinaryReader(File.OpenRead(path)))
@@ -32,86 +55,94 @@ namespace BinaryStructureFormat
             }
         }
 
-        public override string ToString()
+        /// <summary>
+        /// Converts the underlying structure to a single string and returns that string.
+        /// </summary>
+        /// <param name="indentPattern">Pattern used to display indentation.</param>
+        /// <returns>String version of the underlying structure.</returns>
+        public string Stringify(string indentPattern = "\t")
         {
             var sb = new StringBuilder();
-            ToStringRecursive("Root", Root, sb, 0);
+            StringifyRecursive("Root", Root, sb, 0, indentPattern);
             return sb.ToString();
         }
 
-        private void ToStringRecursive(string identifier, BsfNode node, StringBuilder builder, int depth)
+        private static void StringifyRecursive(string identifier, BsfNode node, StringBuilder builder, int depth, string indentPattern)
         {
-            builder.Append(Repeat(IndentPattern, depth));
+            builder.Append(Repeat(indentPattern, depth));
+            AppendIdentifier(identifier, node, builder);
 
-            if (identifier == null)
+            var type = node?.Type ?? BsfType.Null;
+            
+            switch (type)
             {
-                if (node == null)
-                {
-                    builder.Append("null\n");
-                    return;
-                }
-                
-                builder.Append($"[{node.Type}]: ");
+                case BsfType.Struct: StringifyStruct(identifier, (BsfStruct) node, builder, depth, indentPattern); break;
+                case BsfType.List:   StringifyList(identifier, (BsfList) node, builder, depth, indentPattern); break;
+                default:             builder.Append(Stringify(node)); break;
             }
-            else
-            {
-                if (node == null)
-                {
-                    builder.Append($"\"{identifier}\": null\n");
-                    return;
-                }
+            
+            builder.Append('\n');
+        }
+        
+        private static void AppendIdentifier(string identifier, BsfNode node, StringBuilder builder)
+        {
+            if (identifier == null) return;
+            builder.Append($"\"{identifier}\"");
 
-                builder.Append($"[{node.Type}] \"{identifier}\": ");
-            }
-
-            if (node.Type == BsfType.Struct)
+            if (node == null || node.Type != BsfType.Struct && node.Type != BsfType.List)
             {
-                builder.Append('\n');
-                foreach (var (id, element) in (BsfStruct) node)
-                {
-                    ToStringRecursive(id, element, builder, depth + 1);
-                }
-            }
-            else if (node.Type == BsfType.List)
-            {
-                builder.Append('\n');
-                foreach (var element in (BsfList) node)
-                {
-                    ToStringRecursive(null, element, builder, depth + 1);
-                }
-            }
-            else
-            {
-                builder.Append(ToString(node)).Append('\n');
+                builder.Append(" = ");
             }
         }
 
-        private static string ToString(BsfNode node)
+        private static void StringifyStruct(string identifier, BsfStruct structure, StringBuilder builder, int depth, string indentPattern)
         {
-            switch (node.Type)
-            {
-                case BsfType.Byte:   return ((BsfByte) node).Value.ToString();
-                case BsfType.Short:  return ((BsfShort) node).Value.ToString();
-                case BsfType.Int:    return ((BsfInt) node).Value.ToString();
-                case BsfType.Long:   return ((BsfLong) node).Value.ToString();
-                case BsfType.Float:  return ((BsfFloat) node).Value.ToString();
-                case BsfType.Double: return ((BsfDouble) node).Value.ToString();
-                case BsfType.Bool:   return ((BsfBool) node).Value.ToString();
-                case BsfType.Char:   return ((BsfChar) node).Value.ToString();
-                case BsfType.String: return "\"" + ((BsfString) node).Value + "\"";
-                    
-                case BsfType.ByteArray:   return "[" + string.Join(' ', ((BsfByteArray) node).Array) + "]";
-                case BsfType.ShortArray:  return "[" + string.Join(' ', ((BsfShortArray) node).Array) + "]";
-                case BsfType.IntArray:    return "[" + string.Join(' ', ((BsfIntArray) node).Array) + "]";
-                case BsfType.LongArray:   return "[" + string.Join(' ', ((BsfLongArray) node).Array) + "]";
-                case BsfType.FloatArray:  return "[" + string.Join(' ', ((BsfFloatArray) node).Array) + "]";
-                case BsfType.DoubleArray: return "[" + string.Join(' ', ((BsfDoubleArray) node).Array) + "]";
-                case BsfType.BoolArray:   return "[" + string.Join(' ', ((BsfBoolArray) node).Array) + "]";
-                case BsfType.CharArray:   return "[" + string.Join(' ', ((BsfCharArray) node).Array) + "]";
-                case BsfType.StringArray: return "[" + string.Join(' ', ((BsfStringArray) node).Array) + "]";
+            if (identifier != null) builder.Append('\n').Append(Repeat(indentPattern, depth));
+            builder.Append('{').Append('\n');
                 
-                default: throw new ArgumentOutOfRangeException();
-            }
+            foreach (var (id, element) in structure)
+                StringifyRecursive(id, element, builder, depth + 1, indentPattern);
+
+            builder.Append(Repeat(indentPattern, depth)).Append('}');
+        }
+        
+        private static void StringifyList(string identifier, BsfList list, StringBuilder builder, int depth, string indentPattern)
+        {
+            if (identifier != null) builder.Append('\n').Append(Repeat(indentPattern, depth));
+            builder.Append('[').Append('\n');
+
+            foreach (var element in list)
+                StringifyRecursive(null, element, builder, depth + 1, indentPattern);
+
+            builder.Append(Repeat(indentPattern, depth)).Append(']');
+        }
+
+        private static string Stringify(BsfNode node)
+        {
+            if (node == null) return "null";
+
+            return node.Type switch
+            {
+                BsfType.Byte =>   ((BsfByte) node).Value.ToString(),
+                BsfType.Short =>  ((BsfShort) node).Value.ToString(),
+                BsfType.Int =>    ((BsfInt) node).Value.ToString(),
+                BsfType.Long =>   ((BsfLong) node).Value.ToString(),
+                BsfType.Float =>  ((BsfFloat) node).Value.ToString(),
+                BsfType.Double => ((BsfDouble) node).Value.ToString(),
+                BsfType.Bool =>   ((BsfBool) node).Value.ToString(),
+                BsfType.Char =>   ((BsfChar) node).Value.ToString(),
+                BsfType.String => ("\"" + ((BsfString) node).Value + "\""),
+                BsfType.ByteArray =>   ("[" + string.Join(' ', ((BsfByteArray) node).Array) + "]"),
+                BsfType.ShortArray =>  ("[" + string.Join(' ', ((BsfShortArray) node).Array) + "]"),
+                BsfType.IntArray =>    ("[" + string.Join(' ', ((BsfIntArray) node).Array) + "]"),
+                BsfType.LongArray =>   ("[" + string.Join(' ', ((BsfLongArray) node).Array) + "]"),
+                BsfType.FloatArray =>  ("[" + string.Join(' ', ((BsfFloatArray) node).Array) + "]"),
+                BsfType.DoubleArray => ("[" + string.Join(' ', ((BsfDoubleArray) node).Array) + "]"),
+                BsfType.BoolArray =>   ("[" + string.Join(' ', ((BsfBoolArray) node).Array) + "]"),
+                BsfType.CharArray =>   ("[" + string.Join(' ', ((BsfCharArray) node).Array) + "]"),
+                BsfType.StringArray => ("[" + string.Join(' ', ((BsfStringArray) node).Array) + "]"),
+                _ => throw new ArgumentOutOfRangeException()
+            };
         }
         
         private static string Repeat(string pattern, int count)

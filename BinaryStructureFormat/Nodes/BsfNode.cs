@@ -4,14 +4,39 @@ using BinaryStructureFormat.Nodes.Primitives;
 
 namespace BinaryStructureFormat.Nodes
 {
+    /// <summary>
+    /// Abstract node that serves as a base class for all of the concrete node implementations.
+    /// </summary>
     public abstract class BsfNode
     {
+        /// <summary>
+        /// This node's type that defines the value(s) stored by this node.
+        /// </summary>
         public abstract BsfType Type { get; }
 
+        /// <summary>
+        /// Writes the byte value of this node's type to the underlying stream.
+        /// </summary>
+        /// <param name="writer">Writer used for writing to the underlying stream.</param>
         public void WriteType(ExtendedBinaryWriter writer) => writer.Write((byte) Type);
+        
+        /// <summary>
+        /// Writes the binary representation of the value stored by this node to the underlying stream.
+        /// </summary>
+        /// <param name="writer">Writer used for writing to the underlying stream.</param>
         public abstract void WriteValue(ExtendedBinaryWriter writer);
+        
+        /// <summary>
+        /// Reads this node's value from the underlying stream.
+        /// </summary>
+        /// <param name="reader">Reader used for reading from the underlying stream.</param>
         public abstract void ReadValue(ExtendedBinaryReader reader);
 
+        /// <summary>
+        /// Parameterized factory method used to create a node of the given type.
+        /// </summary>
+        /// <param name="type">Type of the node that needs to be created.</param>
+        /// <returns>A newly created node of provided type.</returns>
         protected static BsfNode Create(BsfType type)
         {
             return type switch
