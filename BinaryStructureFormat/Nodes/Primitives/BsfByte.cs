@@ -1,12 +1,12 @@
 ﻿namespace BinaryStructureFormat.Nodes.Primitives
 {
     /// <summary>
-    /// Primitive node that stores a single signed 8-bit integer value.
+    /// Primitive node that stores a single unsigned 8-bit integer value.
     /// </summary>
     public sealed class BsfByte : BsfNode
     {
         /// <summary>
-        /// Signed 8-bit integer value stored by this node.
+        /// Unsigned 8-bit integer value stored by this node.
         /// </summary>
         public byte Value { get; set; }
         

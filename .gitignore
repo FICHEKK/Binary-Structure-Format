@@ -3,3 +3,4 @@ obj/
 /packages/
 .idea/
 /BinaryStructureFormat.Tests/res/
+/BinaryStructureFormat.Tests/TestingArea.cs

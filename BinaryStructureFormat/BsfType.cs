@@ -14,7 +14,7 @@
         /// <summary> Collection node that holds a sequence of nodes of a specific type. </summary>
         List,
         
-        /// <summary> Primitive node that holds a single signed 8-bit integer value. </summary>
+        /// <summary> Primitive node that holds a single unsigned 8-bit integer value. </summary>
         Byte,
         
         /// <summary> Primitive node that holds a single signed 16-bit integer value. </summary>
@@ -41,7 +41,7 @@
         /// <summary> Primitive node that holds a single non-null string. </summary>
         String,
         
-        /// <summary> Array node that holds a single array of signed 8-bit integer values. </summary>
+        /// <summary> Array node that holds a single array of unsigned 8-bit integer values. </summary>
         ByteArray,
         
         /// <summary> Array node that holds a single array of signed 16-bit integer values. </summary>

@@ -1,7 +1,7 @@
 ﻿namespace BinaryStructureFormat.Nodes.Arrays
 {
     /// <summary>
-    /// Array node that stores an array of signed 8-bit integer values.
+    /// Array node that stores an array of unsigned 8-bit integer values.
     /// </summary>
     public sealed class BsfByteArray : BsfArray<byte>
     {
