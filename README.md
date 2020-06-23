@@ -50,7 +50,7 @@ Primitive nodes are nodes that store simple primitive values. Each node is just 
 
 | Node | Value | C# type |
 | :--: | :---: | :-----: |
-| `BsfByte` | Signed 8-bit integer. | `byte` |
+| `BsfByte` | Unsigned 8-bit integer. | `byte` |
 | `BsfShort` | Signed 16-bit integer. | `short` |
 | `BsfInt` | Signed 32-bit integer. | `int` |
 | `BsfLong` | Signed 64-bit integer. | `long` |
@@ -85,7 +85,7 @@ Array nodes are nodes that store a reference to an array of primitive values. Ev
 
 | Node | Value | C# type |
 | :--: | :---: | :-----: |
-| `BsfByteArray` | Array of signed 8-bit integers. | `byte[]` |
+| `BsfByteArray` | Array of unsigned 8-bit integers. | `byte[]` |
 | `BsfShortArray` | Array of signed 16-bit integers. | `short[]` |
 | `BsfIntArray` | Array of signed 32-bit integers. | `int[]` |
 | `BsfLongArray` | Array of signed 64-bit integers. | `long[]` |
