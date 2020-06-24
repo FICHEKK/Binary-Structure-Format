@@ -19,6 +19,8 @@ Binary structure format stores its data hierarchy in a series of nodes. Each nod
 	* `BsfStruct` that maps the `string` identifier to a specific node.
 	* `BsfList` that models a sequential collection of nodes of a specific type.
 	
+**Endianness:** All data is stored in little-endian format.
+	
 ___
 
 ### Abstract `BsfNode` base class
